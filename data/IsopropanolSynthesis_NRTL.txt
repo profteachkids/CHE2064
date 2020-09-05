@@ -1,0 +1,33 @@
+                              Simulation: Untitled                              
+
+
+COMPONENTS
+          ID #     Name              Formula
+   1        62     Water             H2O          
+   2        23     Propylene         C3H6         
+   3       145     Isopropanol       C3H8O        
+   4       460     Diisopropyl Ethe  C6H14O       
+
+
+THERMODYNAMICS
+
+ K-value model     :  NRTL
+                      No correction for vapor fugacity
+ Enthalpy model    :  Latent Heat
+ Liquid density    :  Library  
+
+ Std vapor rate reference temperature is 0 C.
+ Atmospheric pressure is  101324.9766 Pa.
+
+
+NRTL Parameters: Tij = Aij + Bij/T + Cij * Ln(T) + Dij * T (T Deg K)
+
+  I   J      Bij      Bji   Alpha   Aij    Aji    Cij    Cji    Dij    Dji
+  1   2  1036.22  1374.31   0.272   0.00   0.00   0.00   0.00   0.00   0.00
+  1   3   832.98    20.06   0.326   0.00   0.00   0.00   0.00   0.00   0.00
+  1   4  2319.36   834.24   0.223   0.00   0.00   0.00   0.00   0.00   0.00
+  2   3   881.70  -105.82   0.252   0.00   0.00   0.00   0.00   0.00   0.00
+  2   4   514.74  -260.76   0.305   0.00   0.00   0.00   0.00   0.00   0.00
+  3   4    59.14   387.91   0.297   0.00   0.00   0.00   0.00   0.00   0.00
+
+CHEMCAD 7.1.8                                                  8/31/2020 1:12 PM

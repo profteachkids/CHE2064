@@ -1,0 +1,182 @@
+                              Simulation: Untitled                              
+
+
+Physical Properties for Carbon Dioxide  (ID   49)
+
+ Formula: CO2      
+
+ Molecular Weight         :            44.01        
+
+ Critical Temperature     :            87.89   F     
+ Critical Pressure        :         1070.599   psia     
+ Critical Volume          :         1.487523   ft3/lbmol     
+
+ Melting point            :          -69.826   F     
+ Normal boiling point     :         -109.264   F     
+ IG heat of formation     :        -169182.5   Btu/lbmol     
+ IG Gibbs of formation    :        -169565.1   Btu/lbmol     
+ Acentric factor          :            0.231        
+ Solubility parameter     :         7.117688   (cal/cc)**0.5      
+ Dipole moment            :                0   debyes  
+ Radius of Gyration       :    3.412074e-010   ft  
+
+ Mean avg. boiling point  :                0   F     
+ Heat of vaporization     :         7375.194   Btu/lbmol     
+ API net heating value    :                0   Btu/lbmol     
+ API gross heating value  :                0   Btu/lbmol     
+ Liquid volume constant   :            6.365   cc/mol
+ Molecular diameter       :                0   angstroms
+ Modified acentric factor :                0        
+ UNIQUAC area parameter   :                0        
+ UNIQUAC volume parameter :                0        
+ Wilson molar volume      :                0        
+ Stiel polar factor       :                0        
+ Rackett constant         :           0.2745        
+ Polar parameter          :                0        
+ Eps/K                    :                0        
+ Watson factor            :                0        
+ API gravity              :                0        
+ Specific gravity 60 F    :            0.827        
+
+Electrolyte Data (at 25C):
+
+ Electrolyte state        :                0        
+ Electrolyte type         :                0        
+ Electrolyte charge       :                0        
+ Std heat of formation    :        -177900.3   Btu/lbmol     
+ Std Gibbs of formation   :        -165956.3   Btu/lbmol     
+ Standard entropy         :          28.0811   Btu/lbmol-F  
+ Standard heat capacity   :                0   Btu/lbmol-F  
+
+Liquid Density (kmol/m3)               Equation Number: 105
+
+   Min T(K):          216.58        Min value:        26.82564
+   Max T(K):          304.19        Max value:        10.62423
+
+ Coeffs:  2.7570e+000  2.6160e-001  3.0419e+002  2.9030e-001  0.0000e+000  0.0000e+000  0.0000e+000
+
+Solid Density (kmol/m3)                Equation Number: 100
+
+   Min T(K):           143.1        Min value:        36.89993
+   Max T(K):          216.58        Max value:        34.40301
+
+ Coeffs:  3.2939e+001  6.8420e-002 -2.8470e-004  0.0000e+000  0.0000e+000  0.0000e+000  0.0000e+000
+
+Vapor Pressure (Pascals)               Equation Number: 101
+
+   Min T(K):          216.58        Min value:        513510.8
+   Max T(K):          304.19        Max value:         7361698
+
+ Coeffs:  8.5530e+001 -3.4813e+003 -1.1336e+001  2.1505e-002  1.0000e+000  0.0000e+000  0.0000e+000
+
+Heat of Vaporization (J/kmol)          Equation Number: 106
+
+   Min T(K):          216.58        Min value:   1.529967e+007
+   Max T(K):           304.2        Max value:        59629.79
+
+ Coeffs:  1.8260e+007  2.1460e-001 -6.5900e-001  7.8260e-001  0.0000e+000  0.0000e+000  0.0000e+000
+
+Ideal Gas Heat Capacity (J/kmol-K)     Equation Number: 107
+
+   Min T(K):              50        Min value:           29370
+   Max T(K):            5000        Max value:        63346.11
+
+ Coeffs:  2.9370e+004  3.4540e+004 -1.4280e+003  2.6400e+004  5.8800e+002  0.0000e+000  0.0000e+000
+
+Liquid Heat Capacity (J/kmol-K)        Equation Number: 100
+
+   Min T(K):             220        Min value:        78265.77
+   Max T(K):             290        Max value:        166030.8
+
+ Coeffs: -8.3043e+006  1.0437e+005 -4.3333e+002  6.0052e-001  0.0000e+000  0.0000e+000  0.0000e+000
+
+Solid Heat Capacity (J/kmol-K)         Equation Number: 100
+
+   Min T(K):              15        Min value:        1390.192
+   Max T(K):             210        Max value:        59446.46
+
+ Coeffs: -1.4370e+004  1.1880e+003 -9.7100e+000  3.7770e-002 -5.0000e-005  0.0000e+000  0.0000e+000
+
+Vapor Viscosity (Pascal-sec)           Equation Number: 102
+
+   Min T(K):          194.67        Min value:   9.749104e-006
+   Max T(K):            1500        Max value:   5.203248e-005
+
+ Coeffs:  2.1480e-006  4.6000e-001  2.9000e+002  0.0000e+000  0.0000e+000  0.0000e+000  0.0000e+000
+
+Liquid Viscosity (Pascal-sec)          Equation Number: 101
+
+   Min T(K):          219.25        Min value:    0.0002397536
+   Max T(K):          304.19        Max value:   5.468995e-005
+
+ Coeffs:  1.8775e+001 -4.0290e+002 -4.6854e+000 -7.0000e-026  1.0000e+001  0.0000e+000  0.0000e+000
+
+Vapor Thermal Conductivity (W/m-K)     Equation Number: 102
+
+   Min T(K):          194.67        Min value:     0.008866844
+   Max T(K):            1500        Max value:      0.09025325
+
+ Coeffs:  3.6900e+000 -3.8380e-001  9.6400e+002  1.8600e+006  0.0000e+000  0.0000e+000  0.0000e+000
+
+Liquid Thermal Conductivity (W/m-K)    Equation Number: 100
+
+   Min T(K):             250        Min value:        0.133765
+   Max T(K):             300        Max value:         0.07412
+
+ Coeffs:  4.3199e-001 -1.1929e-003  0.0000e+000  0.0000e+000  0.0000e+000  0.0000e+000  0.0000e+000
+
+Liquid Surface Tension (N/m)           Equation Number: 106
+
+   Min T(K):          216.58        Min value:      0.01663059
+   Max T(K):           304.2        Max value:   4.250431e-011
+
+ Coeffs:  7.9970e-002  1.2617e+000  0.0000e+000  0.0000e+000  0.0000e+000  0.0000e+000  0.0000e+000
+
+Antoine Vapor Pressure (mmHg)
+ Coefficients:   2.25900e+001
+                 3.10340e+003
+                -1.60000e-001
+
+Polynomial Ideal Gas Heat Capacity (cal/mol-K)
+ Coefficients:   6.26177e+000
+                 1.13208e-002
+                -6.17261e-006
+                 1.70939e-009
+                -2.34713e-013
+                 1.26733e-017
+
+Two-Term Liquid Viscosity (cP)
+ Coefficients:   5.78080e+002
+                 1.85240e+002
+
+Two-Term Surface Tension (N/m)
+ Coefficients:   0.00000e+000
+                 0.00000e+000
+
+Henry's Constants
+ Coefficients:  -1.39200e+003
+                 1.21000e-001
+                 1.47900e-002
+                 3.98400e+000
+
+MSRK Parameters
+ MSRK m          5.80900e-001 
+ MSRK n          2.72700e-001 
+
+UNIFAC/UNIQUAC Sub-Groups:     Sub-Group ID        Contribution
+
+
+VTPR Parameters          :
+ ci             -1.59000e+000 
+ Li              8.21045e-001 
+ Mi              8.42330e-001 
+ Ni              8.01334e-001 
+
+VTPR Sub-Groups: Sub-Group ID Contribution
+                    CO2(306)             1
+
+
+
+
+
+CHEMCAD 7.1.4                                                 11/17/2018 7:00 AM

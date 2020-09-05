@@ -35,10 +35,10 @@ class Props():
         self.N_comps = len(comps)
 
         id_pat = re.compile(r'ID\s+(\d+)')
-        formula_pat = re.compile(r'Formula:\s+([A-Z1-9]+)')
-        single_props_pat = re.compile('^\s+([\w\s]+?)\s+:\s+([-.0-9e+]+)\s+[\w\s/]*$', re.MULTILINE)
-        coeffs_name_pat = re.compile("([\w ]+)\s[^\n]*?Equation.*?Coeffs:([- e\d.+]+)+?", re.DOTALL)
-        coeffs_pat = re.compile('([-\de.+]+)')
+        formula_pat = re.compile(r'Formula:\s+([A-Z0-9]+)')
+        single_props_pat = re.compile(r'^\s+([\w \/.]+?)\s+:\s+([-.0-9e+]+)\s+[\w\s/]*$', re.MULTILINE)
+        coeffs_name_pat = re.compile(r"([\w ]+)\s[^\n]*?Equation.*?Coeffs:([- e\d.+]+)+?", re.DOTALL)
+        coeffs_pat = re.compile(r'([-\de.+]+)')
 
         props_deque=deque()
         for comp in comps:

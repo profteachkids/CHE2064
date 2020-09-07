@@ -1,9 +1,102 @@
 import jax.numpy as jnp
 import jax
 from dotmap import DotMap
-import haiku as hk
+import pandas as pd
+import copy
 from jax.config import config
 config.update("jax_enable_x64", True)
+
+def tuple_keys(d,flat={},path=(),sizes=None):
+    if sizes is None:
+        sizes=[[(f'v{i}', f'x{j}') for j in range(1,i+1)] for i in range(1,10)]
+    d = d.toDict() if isinstance(d,DotMap) else d
+    for k,v in d.items():
+        if isinstance(v,dict):
+            tuple_keys(v, flat, tuple(path) + (k,))
+        else:
+            if not(jnp.all(jnp.isnan(v))):
+                size = v.size
+                flat[tuple(path) + (k,)]={sizes[size-1][i]:value for i,value in enumerate(v)}
+    return
+
+def remove_nan(orig):
+    clean={}
+    for k,v in orig.items():
+        if isinstance(v,dict):
+            cleaned = remove_nan(v)
+            if len(cleaned) > 0:
+                clean[k]=remove_nan(v)
+        else:
+            if not(jnp.all(jnp.isnan(v))):
+                clean[k]=v
+    return clean
+
+def nan_like(x):
+    values, treedef = jax.tree_flatten(x)
+    def none(val):
+        if isinstance(val,jnp.ndarray):
+            return jnp.nan*jnp.empty_like(val)
+        return float('nan')
+    val_none = map(none,values)
+    return jax.tree_unflatten(treedef,val_none)
+
+def flatten(pytree):
+    vals, tree = jax.tree_flatten(pytree)
+    vals2 = [jnp.atleast_1d(val).astype(jnp.float64) for val in vals]
+    v_flat = jnp.concatenate(vals2)
+    idx = jnp.cumsum(jnp.array([val.size for val in vals2]))
+    return v_flat, idx, tree
+
+def unflatten(x, idx, tree):
+    return jax.tree_unflatten(tree, jnp.split(x,idx[:-1]))
+
+
+def merge(a, b):
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge(a[key], b[key])
+        a[key] = b[key]
+
+
+def transform(model, v, s):
+    v = v.toDict() if isinstance(v,DotMap) else v
+    s = s.toDict() if isinstance(s,DotMap) else s
+    c = {}
+    merge(c,s)
+    merge(c,v)
+    c_flat, idx, tree = flatten(c)
+    c_flat = jnp.array(c_flat)
+
+    v_tree = nan_like(c)
+    merge(v_tree,v)
+    v_flat, _, _ = flatten(v_tree)
+    update_idx = jnp.where(jnp.logical_not(jnp.isnan(v_flat)))
+
+    def model_f(x):
+        c = c_flat.at[update_idx].set(x)
+        c = unflatten(c,idx,tree)
+        return jnp.squeeze(model(c))
+
+    def transform_sol(x_min_array):
+        c = c_flat.at[update_idx].set(x_min_array)
+        c = unflatten(c,idx,tree)
+
+        v_c = v_flat.at[update_idx].set(x_min_array)
+        x_tree= unflatten(v_c, idx,tree)
+
+        x_min = remove_nan(x_tree)
+        res={}
+        tuple_keys(x_min,res)
+        df_x_min = pd.DataFrame(res).transpose().fillna('')
+
+        res={}
+        tuple_keys(c,res)
+        df_c = pd.DataFrame(res).transpose().fillna('')
+
+        return x_min, df_x_min, c, df_c, x_tree
+
+    return model_f, v_flat[update_idx], transform_sol
 
 @jax.jit
 def get_boundaries_intersections(z, d, trust_radius):
@@ -15,31 +108,6 @@ def get_boundaries_intersections(z, d, trust_radius):
     tb = (-b + sqrt_discriminant) / (2*a)
     return jnp.sort(jnp.stack([ta, tb]))
 
-@jax.jit
-def flatten(pytree):
-    vals, tree = jax.tree_flatten(pytree)
-    vals2 = [jnp.atleast_1d(val).astype(jnp.float64) for val in vals]
-    v_flat = jnp.concatenate(vals2)
-    idx = jnp.cumsum(jnp.array([val.size for val in vals2]))
-    return v_flat, idx, tree
-    # v_restore = jax.tree_unflatten(tree, [jnp.squeeze(val) for val in jnp.split(v_flat,idx[:-1])])
-    # JAX does not allow Pytree arguments
-
-
-def minimize_hk(model, guess, params, **kwargs):
-    guess = guess.toDict() if isinstance(guess,DotMap) else guess
-    params = params.toDict() if isinstance(params,DotMap) else guess
-    def func(x):
-        adjust_params = jax.tree_unflatten(tree, [val for val in jnp.split(x,idx[:-1])])
-        p = hk.data_structures.merge(params, adjust_params)
-        return model.apply(p, None)
-
-    x, idx, tree = flatten(guess)
-    x_min, f_min = minimize(func, x, **kwargs)
-    x_min_tree = jax.tree_unflatten(tree, [val for val in jnp.split(x_min,idx[:-1])])
-    return x_min_tree, f_min
-
-
 def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-6, abs_tol=1e-10, rel_tol=1e-6,
              max_iter = 100, max_cg_iter = 100, verbose=False):
 
@@ -47,9 +115,7 @@ def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-
     x = guess
     p_boundary = jnp.zeros_like(x)
     hits_boundary = True
-
     for trust_iter in range(max_iter):
-
         z=jnp.zeros_like(x)
         f = func(x)
         grad = grad_f(x)

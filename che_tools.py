@@ -16,7 +16,7 @@ extract_single_props = {'Molecular Weight' : 'Mw',
                         'Critical Volume' : 'Vc',
                         'Acentric factor' : 'w',
                         'Normal boiling point' : 'Tb',
-                        'Heat of vaporization' : 'Hvap'}
+                        'Heat of vaporization' : 'HvapNb'}
 
 extract_coeff_props={'Vapor Pressure' : 'Pvap',
                      'Ideal Gas Heat Capacity' : 'CpIG',
@@ -102,29 +102,47 @@ class Props():
                 np.add.at(self.NRTL_alpha, comb_index, alpha)
                 np.add.at(self.NRTL_alpha, (comb_index[1],comb_index[0]), alpha)
 
-    @staticmethod
-    @jax.jit
-    def qtox(q):
-        q=jnp.atleast_1d(q)
-        xm1 = jnp.exp(q)/(1+jnp.sum(jnp.exp(q)))
-        return jnp.concatenate((xm1, jnp.atleast_1d(1.-jnp.sum(xm1))))
-
-    @staticmethod
-    @jax.jit
-    def xtoq(x):
-        print(x)
-        x=jnp.atleast_1d(x)
-        return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
-
-    @partial(jax.jit, static_argnums=(0,))
+    # @partial(jax.jit, static_argnums=(0,))
     def Pvap(self,T):
+        T=jnp.squeeze(T)
         return jnp.exp(self.PvapA + self.PvapB/T + self.PvapC*jnp.log(T) +
                        self.PvapD*jnp.power(T,self.PvapE))
 
     @partial(jax.jit, static_argnums=(0,))
     def CpIG(self, T):
+        T=jnp.squeeze(T)
         return (self.CpIGA + self.CpIGB*(self.CpIGC/T/jnp.sinh(self.CpIGC/T))**2 +
                 self.CpIGD*(self.CpIGE/T/jnp.cosh(self.CpIGE/T))**2)
+
+    # @partial(jax.jit, static_argnums=(0,))
+    def Hvap(self, T):
+        T=jnp.squeeze(T)
+        Tr = T/self.Tc
+        return (self.HvapA*jnp.power(1-Tr, self.HvapB + (self.HvapC+(self.HvapD+self.HvapE*Tr)*Tr)*Tr ))
+    
+    # @partial(jax.jit, static_argnums=(0,))
+    def deltaHsensL(self, T):
+        T=jnp.squeeze(T)
+        return T * (self.CpLA + T * (self.CpLB / 2 + T * (self.CpLC / 3 + T * (self.CpLD / 4 + self.CpLE / 5 * T))))
+
+    # @partial(jax.jit, static_argnums=(0,))
+    def Hmix(self, nV, nL, T):
+        T=jnp.squeeze(T)
+
+        return jnp.dot(nL + nV, self.deltaHsensL(T)) + jnp.dot(nV, self.Hvap(T))
+
+
+@jax.jit
+def qtox(q):
+    q=jnp.atleast_1d(q)
+    xm1 = jnp.exp(q)/(1+jnp.sum(jnp.exp(q)))
+    return jnp.concatenate((xm1, jnp.atleast_1d(1.-jnp.sum(xm1))))
+
+@jax.jit
+def xtoq(x):
+    print(x)
+    x=jnp.atleast_1d(x)
+    return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
 
 if __name__=='__main__':
     p=Props(['Isopropanol','Water'])

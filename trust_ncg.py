@@ -20,15 +20,30 @@ def tuple_keys(d,flat={},path=(),sizes=None):
     return
 
 def remove_nan(orig):
-    clean={}
-    for k,v in orig.items():
-        if isinstance(v,dict):
-            cleaned = remove_nan(v)
-            if len(cleaned) > 0:
-                clean[k]=remove_nan(v)
-        else:
-            if not(jnp.all(jnp.isnan(v))):
-                clean[k]=v
+    t = type(orig)
+    clean=t()
+
+
+    if t is dict:
+        for k,v in orig.items():
+            print(v)
+            if type(v) in (tuple,list,dict):
+                cleaned = remove_nan(v)
+                if len(cleaned) > 0:
+                    clean[k]=remove_nan(v)
+            elif not(jnp.all(jnp.isnan(jnp.atleast_1d(v)))):
+                    clean[k]=v
+    elif t in (tuple,list):
+        clean=[]
+        for v in orig:
+            print(v)
+            if type(v) in (tuple,list,dict):
+                cleaned = remove_nan(v)
+                if len(cleaned) > 0:
+                    clean.append(remove_nan(v))
+            elif not(jnp.all(jnp.isnan(jnp.atleast_1d(v)))):
+                clean.append(v)
+
     return clean
 
 def nan_like(x):

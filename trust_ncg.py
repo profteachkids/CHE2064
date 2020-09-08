@@ -1,117 +1,7 @@
 import jax.numpy as jnp
 import jax
-from dotmap import DotMap
-import pandas as pd
-import copy
 from jax.config import config
 config.update("jax_enable_x64", True)
-
-def tuple_keys(d,flat={},path=(),sizes=None):
-    if sizes is None:
-        sizes=[[(f'v{i}', f'x{j}') for j in range(1,i+1)] for i in range(1,10)]
-    d = d.toDict() if isinstance(d,DotMap) else d
-    for k,v in d.items():
-        if isinstance(v,dict):
-            tuple_keys(v, flat, tuple(path) + (k,))
-        else:
-            if not(jnp.all(jnp.isnan(v))):
-                size = v.size
-                flat[tuple(path) + (k,)]={sizes[size-1][i]:value for i,value in enumerate(v)}
-    return
-
-def remove_nan(orig):
-    t = type(orig)
-    clean=t()
-
-
-    if t is dict:
-        for k,v in orig.items():
-            print(v)
-            if type(v) in (tuple,list,dict):
-                cleaned = remove_nan(v)
-                if len(cleaned) > 0:
-                    clean[k]=remove_nan(v)
-            elif not(jnp.all(jnp.isnan(jnp.atleast_1d(v)))):
-                    clean[k]=v
-    elif t in (tuple,list):
-        clean=[]
-        for v in orig:
-            print(v)
-            if type(v) in (tuple,list,dict):
-                cleaned = remove_nan(v)
-                if len(cleaned) > 0:
-                    clean.append(remove_nan(v))
-            elif not(jnp.all(jnp.isnan(jnp.atleast_1d(v)))):
-                clean.append(v)
-
-    return clean
-
-def nan_like(x):
-    values, treedef = jax.tree_flatten(x)
-    def none(val):
-        if isinstance(val,jnp.ndarray):
-            return jnp.nan*jnp.empty_like(val)
-        return float('nan')
-    val_none = map(none,values)
-    return jax.tree_unflatten(treedef,val_none)
-
-def flatten(pytree):
-    vals, tree = jax.tree_flatten(pytree)
-    vals2 = [jnp.atleast_1d(val).astype(jnp.float64) for val in vals]
-    v_flat = jnp.concatenate(vals2)
-    idx = jnp.cumsum(jnp.array([val.size for val in vals2]))
-    return v_flat, idx, tree
-
-def unflatten(x, idx, tree):
-    return jax.tree_unflatten(tree, jnp.split(x,idx[:-1]))
-
-
-def merge(a, b):
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                merge(a[key], b[key])
-        a[key] = b[key]
-
-
-def transform(model, v, s):
-    v = v.toDict() if isinstance(v,DotMap) else v
-    s = s.toDict() if isinstance(s,DotMap) else s
-    c = {}
-    merge(c,s)
-    merge(c,v)
-    c_flat, idx, tree = flatten(c)
-    c_flat = jnp.array(c_flat)
-
-    v_tree = nan_like(c)
-    merge(v_tree,v)
-    v_flat, _, _ = flatten(v_tree)
-    update_idx = jnp.where(jnp.logical_not(jnp.isnan(v_flat)))
-
-    def model_f(x):
-        c = c_flat.at[update_idx].set(x)
-        c = unflatten(c,idx,tree)
-        return jnp.squeeze(model(c))
-
-    def transform_sol(x_min_array):
-        c = c_flat.at[update_idx].set(x_min_array)
-        c = unflatten(c,idx,tree)
-
-        v_c = v_flat.at[update_idx].set(x_min_array)
-        x_tree= unflatten(v_c, idx,tree)
-
-        x_min = remove_nan(x_tree)
-        res={}
-        tuple_keys(x_min,res)
-        df_x_min = pd.DataFrame(res).transpose().fillna('')
-
-        res={}
-        tuple_keys(c,res)
-        df_c = pd.DataFrame(res).transpose().fillna('')
-
-        return x_min, df_x_min, c, df_c, x_tree
-
-    return model_f, v_flat[update_idx], transform_sol
 
 @jax.jit
 def get_boundaries_intersections(z, d, trust_radius):
@@ -124,7 +14,7 @@ def get_boundaries_intersections(z, d, trust_radius):
     return jnp.sort(jnp.stack([ta, tb]))
 
 def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-6, abs_tol=1e-10, rel_tol=1e-6,
-             max_iter = 100, max_cg_iter = 100, verbose=False):
+             max_iter = 100, max_cg_iter = 100, verbosity=1):
 
     grad_f = jax.grad(func)
     x = guess
@@ -176,8 +66,9 @@ def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-
         if rho > 0.15:
             x = x_proposed
 
-        if verbose:
+        if verbosity==1:
             print(f'{trust_iter}:{cg_iter}, f: {f}')
+        if verbosity==2:
             print(f'x: {x}')
             print(f'grad: {grad}')
             print(f'dx: {p_boundary}')
@@ -185,12 +76,12 @@ def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-
         if (jnp.max(jnp.abs(p_boundary/x)) < rel_tol) or (jnp.max(jnp.abs(p_boundary)) < abs_tol):
             break
 
-    if verbose:
+    if verbosity==1:
         print('Final results:')
         print(f'f: {f}')
         print(f'x: {x}')
+    if verbosity==2:
         print(f'grad: {grad}')
         print(f'dx: {p_boundary}')
-        print()
     return x, f
 

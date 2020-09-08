@@ -42,16 +42,27 @@ def todf(tree):
 
 __sizes=[[(f'vector{i}', f'{j}') for j in range(1,i+1)] for i in range(1,10)]
 __sizes[0]=('','Value')
-def tuple_keys(d, flat={}, path=(), sizes=__sizes):
-    d = d.toDict() if isinstance(d,DotMap) else d
-    for k,v in d.items():
-        if isinstance(v,dict):
-            tuple_keys(v, flat, tuple(path) + (k,))
+def tuple_keys(orig, flat={}, path=(), sizes=__sizes):
+
+    def process(v, label):
+        print(v,label)
+        if type(v) in (tuple,list,dict):
+            tuple_keys(v, flat, tuple(path) + (label,))
         else:
+            v=jnp.atleast_1d(v)
             if not(jnp.all(jnp.isnan(v))):
                 size = v.size
-                flat[tuple(path) + (k,)]={sizes[size-1][i]:value for i,value in enumerate(v)}
-    return
+                flat[tuple(path) + (label,)]={sizes[size-1][i]:value for i,value in enumerate(v)}
+
+    t = type(orig)
+    if t in (dict, DotMap):
+        orig = orig.toDict() if isinstance(orig,DotMap) else orig
+        for k,v in orig.items():
+            process(v,k)
+    elif t in (tuple,list):
+        for count,v in enumerate(orig):
+            process(v,count)
+    return flat
 
 def remove_nan(orig):
     t = type(orig)

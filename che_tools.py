@@ -144,6 +144,8 @@ def xtoq(x):
     x=jnp.atleast_1d(x)
     return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
 
+
+
 if __name__=='__main__':
     p=Props(['Isopropanol','Water'])
     print(p.Pvap(300))

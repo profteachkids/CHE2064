@@ -1,8 +1,10 @@
 import jax.numpy as jnp
+import numpy as np
 import jax
 from dotmap import DotMap
 import pandas as pd
 from jax.config import config
+import che_tools as che
 config.update("jax_enable_x64", True)
 
 class VSC():
@@ -45,7 +47,6 @@ __sizes[0]=('','Value')
 def tuple_keys(orig, flat={}, path=(), sizes=__sizes):
 
     def process(v, label):
-        print(v,label)
         if type(v) in (tuple,list,dict):
             tuple_keys(v, flat, tuple(path) + (label,))
         else:
@@ -97,8 +98,10 @@ def nan_like(x):
     return jax.tree_unflatten(treedef,val_none)
 
 def flatten(pytree):
+
     vals, tree = jax.tree_flatten(pytree)
-    vals2 = [jnp.atleast_1d(val).astype(jnp.float64) for val in vals]
+    print([f'{type(val)}, {val}\n' for val in vals])
+    vals2 = [jnp.atleast_1d(val) for val in vals] # convert scalars to array to allow concatenation
     v_flat = jnp.concatenate(vals2)
     idx = jnp.cumsum(jnp.array([val.size for val in vals2]))
     return v_flat, idx, tree
@@ -107,8 +110,48 @@ def unflatten(x, idx, tree):
     return jax.tree_unflatten(tree, jnp.split(x,idx[:-1]))
 
 def merge(a, b):
+    a = a.toDict() if isinstance(a,DotMap) else a
+    b = b.toDict() if isinstance(b,DotMap) else a
     for key in b:
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 merge(a[key], b[key])
         a[key] = b[key]
+
+class Comp():
+    def __init__(self,x):
+        self.x=x
+
+    def __repr__(self):
+        return f'{self.x}'
+
+    @staticmethod
+    def flatten(c):
+        return che.xtoq(c.x), None
+
+    @staticmethod
+    def unflatten(aux, q):
+        q=jnp.squeeze(jnp.asarray(q))
+        return che.qtox(q)
+
+
+jax.tree_util.register_pytree_node(Comp, Comp.flatten, Comp.unflatten)
+
+class Range():
+    def __init__(self,x, lo, hi):
+        self.x=x
+        self.lo = lo
+        self.diff = hi-lo
+
+    def __repr__(self):
+        return f'{self.x}, lo={self.lo}, diff={self.diff}'
+
+    @staticmethod
+    def flatten(v):
+        return ((v.x-v.lo)/v.diff,), (v.lo,v.diff)
+
+    @staticmethod
+    def unflatten(aux, f):
+        return f[0]*aux[1]+aux[0]
+
+jax.tree_util.register_pytree_node(Range, Range.flatten, Range.unflatten)

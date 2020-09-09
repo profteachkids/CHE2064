@@ -131,7 +131,6 @@ class Props():
 
         return jnp.dot(nL + nV, self.deltaHsensL(T)) + jnp.dot(nV, self.Hvap(T))
 
-
 @jax.jit
 def qtox(q):
     q=jnp.atleast_1d(q)
@@ -140,7 +139,6 @@ def qtox(q):
 
 @jax.jit
 def xtoq(x):
-    print(x)
     x=jnp.atleast_1d(x)
     return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
 

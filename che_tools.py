@@ -132,16 +132,6 @@ class Props():
         return jnp.dot(nL + nV, self.deltaHsensL(T)) + jnp.dot(nV, self.Hvap(T))
 
     @partial(jax.jit, static_argnums=(0,))
-    def NRTL_Gex(self, n,T):
-        x = n/jnp.sum(n)
-        tau = self.NRTL_B/T
-        G = jnp.exp(-self.NRTL_alpha*tau)
-        xG = jnp.einsum('k, ki -> i', x, G)
-        xtauG = jnp.einsum('j, ji, ji -> i', x, tau, G)
-        xtauGdivxG = xtauG/xG
-        return jnp.dot(n, xtauGdivxG)
-
-    @partial(jax.jit, static_argnums=(0,))
     def NRTL_gamma(self, x, T):
         tau = (self.NRTL_A + self.NRTL_B / T + self.NRTL_C * jnp.log(T) +
                self.NRTL_D * T)
@@ -162,10 +152,6 @@ def qtox(q):
 def xtoq(x):
     x=jnp.atleast_1d(x)
     return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
-
-
-
-
 
 if __name__=='__main__':
     p=Props(['Isopropanol','Water'])

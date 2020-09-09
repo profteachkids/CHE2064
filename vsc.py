@@ -40,10 +40,10 @@ class VSC():
 def todf(tree):
     res={}
     tuple_keys(tree, res)
-    return pd.DataFrame(res).transpose().fillna('')
+    return pd.DataFrame.from_dict(res).transpose().fillna('')
 
 __sizes=[[(f'vector{i}', f'{j}') for j in range(1,i+1)] for i in range(1,10)]
-__sizes[0]=('','Value')
+# __sizes[0]=('','Value')
 def tuple_keys(orig, flat={}, path=(), sizes=__sizes):
 
     def process(v, label):

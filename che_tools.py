@@ -7,7 +7,18 @@ from itertools import combinations
 import jax
 import jax.numpy as jnp
 from jax.config import config
-from functools import partial
+from functools import partial, wraps
+from time import time
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print (f'{f.__name__} {args} {kw} {te-ts:2.4}')
+        return result
+    return wrap
 config.update("jax_enable_x64", True)
 
 extract_single_props = {'Molecular Weight' : 'Mw',

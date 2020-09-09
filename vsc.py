@@ -14,22 +14,22 @@ class VSC():
         self.c = {}
         merge(self.c,s)
         merge(self.c,v)
-        self.c_flat, self.idx, self.tree = flatten(self.c)
+        self.c_flat, self.idx, self.shapes, self.tree = flatten(self.c)
 
         self.v_tree = nan_like(self.c)
         merge(self.v_tree,v)
-        self.v_flat, _, _ = flatten(self.v_tree)
+        self.v_flat, *_ = flatten(self.v_tree)
         self.update_idx = jnp.where(jnp.logical_not(jnp.isnan(self.v_flat)))
 
         self.x = self.v_flat[self.update_idx]
 
     def xtoc(self,x):
         c = self.c_flat.at[self.update_idx].set(x)
-        return DotMap(unflatten(c, self.idx, self.tree))
+        return DotMap(unflatten(c, self.idx, self.shapes, self.tree))
 
     def xtov(self,x):
         v_c = self.v_flat.at[self.update_idx].set(self.x)
-        v_tree= unflatten(v_c, self.idx, self.tree)
+        v_tree= unflatten(v_c, self.idx, self.shapes, self.tree)
         return DotMap(remove_nan(v_tree))
 
     def transform(self,model):
@@ -100,13 +100,14 @@ def nan_like(x):
 def flatten(pytree):
 
     vals, tree = jax.tree_flatten(pytree)
-    vals2 = [jnp.atleast_1d(val) for val in vals] # convert scalars to array to allow concatenation
+    shapes = [jnp.atleast_1d(val).shape for val in vals]
+    vals2 = [jnp.atleast_1d(val).reshape([-1,]) for val in vals] # convert scalars to array to allow concatenation
     v_flat = jnp.concatenate(vals2)
     idx = jnp.cumsum(jnp.array([val.size for val in vals2]))
-    return v_flat, idx, tree
+    return v_flat, idx, shapes, tree
 
-def unflatten(x, idx, tree):
-    return jax.tree_unflatten(tree, jnp.split(x,idx[:-1]))
+def unflatten(x, idx, shapes, tree):
+    return jax.tree_unflatten(tree, [item.reshape(shape) for item,shape in zip(jnp.split(x,idx[:-1]), shapes)])
 
 def merge(a, b):
     a = a.toDict() if isinstance(a,DotMap) else a

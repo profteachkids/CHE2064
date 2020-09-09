@@ -102,7 +102,7 @@ class Props():
                 np.add.at(self.NRTL_alpha, comb_index, alpha)
                 np.add.at(self.NRTL_alpha, (comb_index[1],comb_index[0]), alpha)
 
-    # @partial(jax.jit, static_argnums=(0,))
+    @partial(jax.jit, static_argnums=(0,))
     def Pvap(self,T):
         T=jnp.squeeze(T)
         return jnp.exp(self.PvapA + self.PvapB/T + self.PvapC*jnp.log(T) +
@@ -114,22 +114,43 @@ class Props():
         return (self.CpIGA + self.CpIGB*(self.CpIGC/T/jnp.sinh(self.CpIGC/T))**2 +
                 self.CpIGD*(self.CpIGE/T/jnp.cosh(self.CpIGE/T))**2)
 
-    # @partial(jax.jit, static_argnums=(0,))
+    @partial(jax.jit, static_argnums=(0,))
     def Hvap(self, T):
         T=jnp.squeeze(T)
         Tr = T/self.Tc
         return (self.HvapA*jnp.power(1-Tr, self.HvapB + (self.HvapC+(self.HvapD+self.HvapE*Tr)*Tr)*Tr ))
     
-    # @partial(jax.jit, static_argnums=(0,))
+    @partial(jax.jit, static_argnums=(0,))
     def deltaHsensL(self, T):
         T=jnp.squeeze(T)
         return T * (self.CpLA + T * (self.CpLB / 2 + T * (self.CpLC / 3 + T * (self.CpLD / 4 + self.CpLE / 5 * T))))
 
-    # @partial(jax.jit, static_argnums=(0,))
+    @partial(jax.jit, static_argnums=(0,))
     def Hmix(self, nV, nL, T):
         T=jnp.squeeze(T)
 
         return jnp.dot(nL + nV, self.deltaHsensL(T)) + jnp.dot(nV, self.Hvap(T))
+
+    @partial(jax.jit, static_argnums=(0,))
+    def NRTL_Gex(self, n,T):
+        x = n/jnp.sum(n)
+        tau = self.NRTL_B/T
+        G = jnp.exp(-self.NRTL_alpha*tau)
+        xG = jnp.einsum('k, ki -> i', x, G)
+        xtauG = jnp.einsum('j, ji, ji -> i', x, tau, G)
+        xtauGdivxG = xtauG/xG
+        return jnp.dot(n, xtauGdivxG)
+
+    @partial(jax.jit, static_argnums=(0,))
+    def NRTL_gamma(self, x, T):
+        tau = (self.NRTL_A + self.NRTL_B / T + self.NRTL_C * jnp.log(T) +
+               self.NRTL_D * T)
+        G = jnp.exp(-self.NRTL_alpha * tau)
+
+        xG=jnp.dot(x,G)
+        xtauGdivxG = jnp.dot(x,tau * G) / xG
+        lngamma = xtauGdivxG + jnp.dot((x / xG), (G * (tau - xtauGdivxG)).T)
+        return jnp.exp(lngamma)
 
 @jax.jit
 def qtox(q):
@@ -141,6 +162,8 @@ def qtox(q):
 def xtoq(x):
     x=jnp.atleast_1d(x)
     return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
+
+
 
 
 

@@ -147,10 +147,11 @@ class Range():
 
     @staticmethod
     def flatten(v):
-        return ((v.x-v.lo)/v.diff,), (v.lo,v.diff)
+        p = (v.x-v.lo)/v.diff
+        return (jnp.log(p)-jnp.log(1.-p),), (v.lo,v.diff)
 
     @staticmethod
     def unflatten(aux, f):
-        return f[0]*aux[1]+aux[0]
+        return jax.nn.sigmoid(f[0])*aux[1]+aux[0]
 
 jax.tree_util.register_pytree_node(Range, Range.flatten, Range.unflatten)

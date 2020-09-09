@@ -100,7 +100,6 @@ def nan_like(x):
 def flatten(pytree):
 
     vals, tree = jax.tree_flatten(pytree)
-    print([f'{type(val)}, {val}\n' for val in vals])
     vals2 = [jnp.atleast_1d(val) for val in vals] # convert scalars to array to allow concatenation
     v_flat = jnp.concatenate(vals2)
     idx = jnp.cumsum(jnp.array([val.size for val in vals2]))

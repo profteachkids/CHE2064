@@ -153,6 +153,19 @@ class Props():
         lngamma = xtauGdivxG + jnp.dot((x / xG), (G * (tau - xtauGdivxG)).T)
         return jnp.exp(lngamma)
 
+    @partial(jax.jit, static_argnums=(0,))
+    def Gex(self, x,T):
+        tau = (self.NRTL_A + self.NRTL_B / T + self.NRTL_C * jnp.log(T) +
+               self.NRTL_D * T)
+        G = jnp.exp(-self.NRTL_alpha * tau)
+        xG=jnp.dot(x,G)
+        xtauGdivxG = jnp.dot(x,(tau * G)) / xG
+        return jnp.dot(x, xtauGdivxG)
+
+    @partial(jax.jit, static_argnums=(0,))
+    def NRTL_gamma2(self,x, T):
+        return jnp.exp(jax.grad(self.Gex,0)(x,T))
+
 @jax.jit
 def qtox(q):
     q=jnp.atleast_1d(q)

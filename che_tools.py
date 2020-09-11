@@ -97,21 +97,24 @@ class Props():
                 comb_values_pat = re.compile(r'^[ ]+(' + comb_str +
                                              r')[ ]+(?:' + comb_str + r')(.*)$', re.MULTILINE)
 
-                first_id, values = comb_values_pat.search(text[start:]).groups(1)
-                #if matched order is flipped, also flip indices
-                if first_id != comb_index[0]:
-                    comb_index = (comb_index[1],comb_index[0])
-                bij, bji, alpha, aij, aji, cij, cji, dij, dji  = [float(val) for val in values.split()]
-                np.add.at(self.NRTL_B, comb_index, bij)
-                np.add.at(self.NRTL_B, (comb_index[1],comb_index[0]), bji)
-                np.add.at(self.NRTL_A, comb_index, aij)
-                np.add.at(self.NRTL_A, (comb_index[1],comb_index[0]), aji)
-                np.add.at(self.NRTL_C, comb_index, cij)
-                np.add.at(self.NRTL_C, (comb_index[1],comb_index[0]), cji)
-                np.add.at(self.NRTL_D, comb_index, dij)
-                np.add.at(self.NRTL_D, (comb_index[1],comb_index[0]), dji)
-                np.add.at(self.NRTL_alpha, comb_index, alpha)
-                np.add.at(self.NRTL_alpha, (comb_index[1],comb_index[0]), alpha)
+
+                match = comb_values_pat.search(text[start:])
+                if match is not None:
+                    first_id, values = match.groups(1)
+                    #if matched order is flipped, also flip indices
+                    if first_id != comb_index[0]:
+                        comb_index = (comb_index[1],comb_index[0])
+                    bij, bji, alpha, aij, aji, cij, cji, dij, dji  = [float(val) for val in values.split()]
+                    np.add.at(self.NRTL_B, comb_index, bij)
+                    np.add.at(self.NRTL_B, (comb_index[1],comb_index[0]), bji)
+                    np.add.at(self.NRTL_A, comb_index, aij)
+                    np.add.at(self.NRTL_A, (comb_index[1],comb_index[0]), aji)
+                    np.add.at(self.NRTL_C, comb_index, cij)
+                    np.add.at(self.NRTL_C, (comb_index[1],comb_index[0]), cji)
+                    np.add.at(self.NRTL_D, comb_index, dij)
+                    np.add.at(self.NRTL_D, (comb_index[1],comb_index[0]), dji)
+                    np.add.at(self.NRTL_alpha, comb_index, alpha)
+                    np.add.at(self.NRTL_alpha, (comb_index[1],comb_index[0]), alpha)
 
     @partial(jax.jit, static_argnums=(0,))
     def Pvap(self,T):

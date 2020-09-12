@@ -20,6 +20,11 @@ class VX():
         self.x, *_ = flatten(v)
         return(self.x)
 
+    def soltov(self, sol):
+        nt = sol.shape[-1]
+        shapes = [shape + (nt,) for shape in self.shapes]
+        return DotMap(unflatten(sol, self.idx, shapes, self.tree))
+
     def transform(self, model):
         if self.s is None:
             def model_f(t, x):

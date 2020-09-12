@@ -7,34 +7,6 @@ import pandas as pd
 from jax.config import config
 config.update("jax_enable_x64", True)
 
-class VX():
-    def __init__(self,v, s=None):
-        self.v = v.toDict() if isinstance(v,DotMap) else v
-        self.dv = DotMap(copy.deepcopy(self.v))
-        self.x, self.idx, self.shapes, self.tree = flatten(self.v)
-        self.s = s
-
-    def xtov(self,x):
-        return DotMap(unflatten(x, self.idx, self.shapes, self.tree))
-
-    def vtox(self,v):
-        self.x, *_ = flatten(v)
-        return(self.x)
-
-    def transform(self, model):
-        if self.s is None:
-            def model_f(t, x):
-                return jnp.squeeze(self.vtox(model(t, self.xtov(x), self.dv).toDict()))
-        else:
-            def model_f(t, x):
-                dx = self.vtox( model(t, self.xtov(x), self.s, self.dv).toDict())
-                return jnp.squeeze(dx)
-
-        return model_f
-
-
-
-
 class VSC():
     def __init__(self,v,s):
         self.v = v.toDict() if isinstance(v,DotMap) else v

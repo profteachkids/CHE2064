@@ -130,7 +130,6 @@ def flatten(pytree):
         return jnp.atleast_1d(val).reshape([-1]), jnp.atleast_1d(val).shape, type(val)
 
     vals, tree = jax.tree_flatten(pytree)
-    print(vals)
     shapes = [jnp.atleast_1d(val).shape for val in vals]
     vals2 = [jnp.atleast_1d(val).reshape([-1,]) for val in vals] # convert scalars to array to allow concatenation
     v_flat = jnp.concatenate(vals2)

@@ -28,7 +28,6 @@ class VX():
         else:
             def model_f(t, x):
                 dx = self.vtox( model(t, self.xtov(x), self.s, self.dv).toDict())
-                print(dx)
                 return jnp.squeeze(dx)
 
         return model_f

@@ -33,7 +33,7 @@ class VSC():
 
     def transform(self,model):
         def model_f(x):
-            return jnp.squeeze(model(self.xtoc(x)))
+            return jnp.squeeze(model(DotMap(self.xtoc(x))))
         return model_f
 
 def todf(tree):

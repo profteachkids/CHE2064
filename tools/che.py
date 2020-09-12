@@ -145,8 +145,6 @@ class Props():
 
     @partial(jax.jit, static_argnums=(0,))
     def Hmix(self, nV, nL, T):
-        nV=jnp.atleast_1d(nV)
-        nL = jnp.atleast_1d(nL)
         T=jnp.squeeze(T)
 
         return jnp.dot(nL + nV, self.deltaHsensL(T)) + jnp.dot(nV, self.Hvap(T))

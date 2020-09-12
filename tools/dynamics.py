@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 from dotmap import DotMap
+import copy
 from tools.tree_array_transform import flatten, unflatten
 from jax.config import config
 config.update("jax_enable_x64", True)

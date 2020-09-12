@@ -2,7 +2,6 @@ import jax.numpy as jnp
 
 import jax
 from dotmap import DotMap
-import copy
 import pandas as pd
 from jax.config import config
 config.update("jax_enable_x64", True)

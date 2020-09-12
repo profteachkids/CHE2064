@@ -11,6 +11,9 @@ config.update("jax_enable_x64", True)
 from functools import partial, wraps
 from time import time
 
+two_pi=2*jnp.pi
+one_third = 1/3
+
 def timing(f):
     @wraps(f)
     def wrap(*args, **kw):
@@ -181,6 +184,26 @@ def xtoq(x):
     x=jnp.atleast_1d(x)
     return jnp.log(x[:-1]) + jnp.log(1.+ (1. - x[-1])/x[-1])
 
-if __name__=='__main__':
-    p=Props(['Isopropanol','Water'])
-    print(p.Pvap(300))
+
+
+@jax.jit
+def cubic_roots(a, b, c):
+    # Returns only the real roots of cubic equations with real coefficients
+    # x**3 + a x**2 + b x + c = 0
+
+    Q = (a * a - 3 * b) / 9
+    R = (2 * a * a * a - 9 * a * b + 27 * c) / 54
+    det = (R * R - Q ** 3)
+
+    def roots3(v):
+        theta = jnp.arccos(R / pow(Q, 1.5))
+        x=jnp.array((jnp.cos(theta/3), jnp.cos((theta+two_pi)/3), jnp.cos((theta-two_pi)/3)))
+        x = -2 * jnp.sqrt(Q)*x - a/3
+        return x
+
+    def roots1(v):
+        A = -jnp.sign(R) * (abs(R) + jnp.sqrt(det)) ** one_third
+        B = Q / A
+        return jnp.array([(A + B) - a / 3, jnp.nan, jnp.nan])
+
+    return jax.lax.cond(det < 0, roots3, roots1, (1))

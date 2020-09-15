@@ -87,19 +87,21 @@ def remove_nan(orig):
 
     return clean
 
-def nan_like(x):
+def nan_like(x, f=None):
+    x = x.toDict() if isinstance(x,DotMap) else x
     values, treedef = jax.tree_flatten(x)
     def none(val):
         if isinstance(val,jnp.ndarray):
             return jnp.nan*jnp.empty_like(val)
         return float('nan')
-    val_none = map(none,values)
+
+    if f is None:
+        val_none = map(none,values)
+    else:
+        val_none = map(f, values)
     return jax.tree_unflatten(treedef,val_none)
 
 def flatten(pytree):
-
-    def val_shape_type(val):
-        return jnp.atleast_1d(val).reshape([-1]), jnp.atleast_1d(val).shape, type(val)
 
     vals, tree = jax.tree_flatten(pytree)
     shapes = [jnp.atleast_1d(val).shape for val in vals]
@@ -111,14 +113,25 @@ def flatten(pytree):
 def unflatten(x, idx, shapes, tree):
     return jax.tree_unflatten(tree, [item.reshape(shape) for item,shape in zip(jnp.split(x,idx[:-1]), shapes)])
 
-def merge(a, b):
+def replace_not_nan(a,b):
+    a = a.toDict() if isinstance(a,DotMap) else a
+    b = b.toDict() if isinstance(b,DotMap) else b
+    a_flat, idx, shapes, tree = flatten(a)
+    b_flat, *_ = flatten(b)
+    c_flat = jnp.where(jnp.logical_not(jnp.isnan(b_flat)), b_flat, a_flat)
+    return DotMap(unflatten(c_flat, idx, shapes, tree))
+
+def merge(a, b, all = True):
     a = a.toDict() if isinstance(a,DotMap) else a
     b = b.toDict() if isinstance(b,DotMap) else a
     for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                merge(a[key], b[key])
-        a[key] = b[key]
+        b_value = b[key]
+        if key not in a:
+            a[key] = b_value
+        elif isinstance(a[key], dict) and isinstance(b_value, dict):
+            merge(a[key], b_value, all)
+        elif all:
+            a[key] = b_value
 
 class Comp():
     def __init__(self,x):

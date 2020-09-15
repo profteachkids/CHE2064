@@ -144,6 +144,16 @@ class Props():
         return T * (self.CpLA + T * (self.CpLB / 2 + T * (self.CpLC / 3 + T * (self.CpLD / 4 + self.CpLE / 5 * T))))
 
     @partial(jax.jit, static_argnums=(0,))
+    def Hv(self, nV, T):
+        T=jnp.squeeze(T)
+        return jnp.dot(nV, self.deltaHsensL(T)+self.Hvap(T))
+
+    @partial(jax.jit, static_argnums=(0,))
+    def Hl(self, nL, T):
+        T=jnp.squeeze(T)
+        return jnp.dot(nL, self.deltaHsensL(T))
+
+    @partial(jax.jit, static_argnums=(0,))
     def Hmix(self, nV, nL, T):
         T=jnp.squeeze(T)
 

@@ -154,12 +154,6 @@ class Props():
         return jnp.dot(nL, self.deltaHsensL(T))
 
     @partial(jax.jit, static_argnums=(0,))
-    def Hmix(self, nV, nL, T):
-        T=jnp.squeeze(T)
-
-        return jnp.dot(nL + nV, self.deltaHsensL(T)) + jnp.dot(nV, self.Hvap(T))
-
-    @partial(jax.jit, static_argnums=(0,))
     def NRTL_gamma(self, x, T):
         x=jnp.atleast_1d(x)
         tau = (self.NRTL_A + self.NRTL_B / T + self.NRTL_C * jnp.log(T) +

@@ -31,7 +31,9 @@ extract_single_props = {'Molecular Weight' : 'Mw',
                         'Critical Volume' : 'Vc',
                         'Acentric factor' : 'w',
                         'Normal boiling point' : 'Tb',
-                        'Heat of vaporization' : 'HvapNb'}
+                        'IG heat of formation' : 'HfIG',
+                        'IG Gibbs of formation' : 'GfIG',
+                        'Heat of vaporization' : 'Hvap'}
 
 extract_coeff_props={'Vapor Pressure' : 'Pvap',
                      'Ideal Gas Heat Capacity' : 'CpIG',
@@ -152,6 +154,10 @@ class Props():
     def Hl(self, nL, T):
         T=jnp.squeeze(T)
         return jnp.dot(nL, self.deltaHsensL(T))
+
+    def Gv(self, nV, T):
+        T=jnp.squeeze(T)
+
 
     @partial(jax.jit, static_argnums=(0,))
     def NRTL_gamma(self, x, T):

@@ -33,7 +33,7 @@ extract_single_props = {'Molecular Weight' : 'Mw',
                         'Normal boiling point' : 'Tb',
                         'IG heat of formation' : 'HfIG',
                         'IG Gibbs of formation' : 'GfIG',
-                        'Heat of vaporization' : 'Hvap'}
+                        'Heat of vaporization' : 'HvapNB'}
 
 extract_coeff_props={'Vapor Pressure' : 'Pvap',
                      'Ideal Gas Heat Capacity' : 'CpIG',

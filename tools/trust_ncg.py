@@ -66,9 +66,9 @@ def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-
         if rho > 0.15:
             x = x_proposed
 
-        if verbosity==1:
+        if verbosity>0:
             print(f'{trust_iter}:{cg_iter}, f: {f}')
-        if verbosity==2:
+        if verbosity>1:
             print(f'x: {x}')
             print(f'grad: {grad}')
             print(f'dx: {p_boundary}')
@@ -76,11 +76,11 @@ def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-
         if (jnp.max(jnp.abs(p_boundary/x)) < rel_tol) or (jnp.max(jnp.abs(p_boundary)) < abs_tol):
             break
 
-    if verbosity==1:
+    if verbosity>0:
         print('Final results:')
         print(f'f: {f}')
         print(f'x: {x}')
-    if verbosity==2:
+    if verbosity>1:
         print(f'grad: {grad}')
         print(f'dx: {p_boundary}')
     return x, f

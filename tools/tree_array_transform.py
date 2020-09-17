@@ -37,14 +37,13 @@ class VSC():
             return jnp.squeeze(res)
         return model_f
 
-    def report(self, model, c):
-        c = DotMap(c) if isinstance(c,dict) else c
-        _, *rep = model(c)
-        if rep is None:
-            print('Model returned no values for reporting')
-        else:
-            return todf(rep)
-
+def report(model, c):
+    c = DotMap(c) if isinstance(c,dict) else c
+    _, *rep = model(c)
+    if rep is None:
+        print('Model returned no values for reporting')
+    else:
+        return todf(rep)
 
 def todf(tree):
     res={}
@@ -56,7 +55,7 @@ __sizes=[[(f'vector{i}', f'{j}') for j in range(1,i+1)] for i in range(1,10)]
 def tuple_keys(orig, flat={}, path=(), sizes=__sizes):
 
     def process(v, label):
-        if type(v) in (tuple,list,dict):
+        if type(v) in (tuple,list,dict, DotMap):
             tuple_keys(v, flat, tuple(path) + (label,))
         else:
             v = v.val if isinstance(v, jax.interpreters.ad.JVPTracer) else v

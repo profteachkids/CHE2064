@@ -39,7 +39,8 @@ extract_coeff_props={'Vapor Pressure' : 'Pvap',
                      'Ideal Gas Heat Capacity' : 'CpIG',
                      'Liquid Heat Capacity' : 'CpL',
                      'Solid Heat Capacity' : 'CpS',
-                     'Heat of Vaporization' : 'Hvap'}
+                     'Heat of Vaporization' : 'Hvap',
+                     'Liquid Density' : 'rhoL'}
 base_url = 'https://raw.githubusercontent.com/profteachkids/CHE2064/master/data/'
 
 BIP_file = 'https://raw.githubusercontent.com/profteachkids/CHE2064/master/data/BinaryNRTL.txt'
@@ -92,7 +93,10 @@ class Props():
             id_str = id_name_pat.findall(text)
             #maintain order of components
             id_dict = {v:k for k,v in id_str}
-            id_str = [id_dict[id] for id in self.ID]
+
+            # list of comp IDs with BIP data
+            id_str = [id_dict.get(id, None) for id in self.ID]
+            id_str = list(filter(None, id_str))
             comb_strs = combinations(id_str,2)
             comb_indices = combinations(range(self.N_comps),2)
             self.NRTL_A, self.NRTL_B, self.NRTL_C, self.NRTL_D, self.NRTL_alpha = np.zeros((5, self.N_comps,self.N_comps))
@@ -155,9 +159,10 @@ class Props():
         T=jnp.squeeze(T)
         return jnp.dot(nL, self.deltaHsensL(T))
 
-    def Gv(self, nV, T):
+    @partial(jax.jit, static_argnums=(0,))
+    def rhol(self, T):
         T=jnp.squeeze(T)
-
+        return(self.rhoLA / jnp.power(self.rhoLB, 1+ jnp.power((1.-T/self.rhoLC),self.rhoLD)) *self.Mw)
 
     @partial(jax.jit, static_argnums=(0,))
     def NRTL_gamma(self, x, T):

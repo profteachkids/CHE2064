@@ -27,14 +27,24 @@ class VSC():
         return DotMap(unflatten(c, self.idx, self.shapes, self.tree))
 
     def xtov(self,x):
-        v_c = self.v_flat.at[self.update_idx].set(self.x)
+        v_c = self.v_flat.at[self.update_idx].set(x)
         v_tree= unflatten(v_c, self.idx, self.shapes, self.tree)
         return DotMap(remove_nan(v_tree))
 
     def transform(self,model):
         def model_f(x):
-            return jnp.squeeze(model(DotMap(self.xtoc(x))))
+            res, *_ = model(DotMap(self.xtoc(x)))
+            return jnp.squeeze(res)
         return model_f
+
+    def report(self, model, c):
+        c = DotMap(c) if isinstance(c,dict) else c
+        _, *rep = model(c)
+        if rep is None:
+            print('Model returned no values for reporting')
+        else:
+            return todf(rep)
+
 
 def todf(tree):
     res={}
@@ -49,6 +59,7 @@ def tuple_keys(orig, flat={}, path=(), sizes=__sizes):
         if type(v) in (tuple,list,dict):
             tuple_keys(v, flat, tuple(path) + (label,))
         else:
+            v = v.val if isinstance(v, jax.interpreters.ad.JVPTracer) else v
             v=jnp.atleast_1d(v)
             if not(jnp.all(jnp.isnan(v))):
                 size = v.size

@@ -10,6 +10,9 @@ class VSC():
     def __init__(self,v,s):
         self.v = v.toDict() if isinstance(v,DotMap) else v
         self.s = s.toDict() if isinstance(s,DotMap) else s
+        self.sdf = todf(self.s)
+        self.rdf = None
+        self.vdf = None
         self.c = {}
         merge(self.c,s)
         merge(self.c,v)
@@ -39,13 +42,13 @@ class VSC():
             return jnp.squeeze(res)
         return model_f
 
-    def report(self,model,x):
+    def generate_reports(self,model,x):
+        self.vdf=todf(self.xtov(x))
         c=self.xtoc(x)
         res = model(c)
         if isinstance(res,tuple):
-            return pd.concat([todf(res[1]), todf(c)]).fillna('')
-        else:
-            return todf(c)
+            self.rdf= todf(res[1]).fillna('')
+        return
 
 
 def todf(tree):

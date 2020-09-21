@@ -39,13 +39,14 @@ class VSC():
             return jnp.squeeze(res)
         return model_f
 
-def report(model, c):
-    c = DotMap(c) if isinstance(c,dict) else c
-    _, *rep = model(c)
-    if rep is None:
-        print('Model returned no values for reporting')
-    else:
-        return todf(rep)
+    def report(self,model,x):
+        c=self.xtoc(x)
+        res = model(c)
+        if isinstance(res,tuple):
+            return pd.concat([todf(res[1]), todf(c)]).fillna('')
+        else:
+            return todf(c)
+
 
 def todf(tree):
     res={}

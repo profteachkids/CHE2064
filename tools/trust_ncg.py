@@ -14,7 +14,7 @@ def minimize(func, guess, verbosity=1):
         if verbosity > 0:
             print (state.fun)
 
-    bounds = [(-30.,30.)]*guess.size
+    bounds = [(-25.,25.)]*guess.size
 
     res = scipy_minimize(func, guess, method='trust-constr', bounds=bounds,jac=jax.grad(func), hessp=hvp, callback=cb)
     return res.x, res.fun

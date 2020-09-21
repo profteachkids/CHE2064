@@ -18,10 +18,6 @@ def minimize(func, guess, verbosity=1):
 
     res = scipy_minimize(func, guess, method='trust-constr', bounds=bounds,jac=jax.grad(func), hessp=hvp, callback=cb)
     return res.x, res.fun
-
-
-
-
 @jax.jit
 def get_boundaries_intersections(z, d, trust_radius):
     a = jnp.vdot(d, d)

@@ -1,19 +1,21 @@
 import jax.numpy as jnp
-
 import jax
 from dotmap import DotMap
 import pandas as pd
+from scipy.optimize import minimize as scipy_minimize
 from jax.config import config
 config.update("jax_enable_x64", True)
 
 class VSC():
-    def __init__(self,v,s):
+    def __init__(self,v,s, model):
         self.v = v.toDict() if isinstance(v,DotMap) else v
         self.s = s.toDict() if isinstance(s,DotMap) else s
         self.sdf = todf(self.s)
         self.rdf = None
         self.vdf = None
+        self.model = model
         self.c = {}
+        self.r = DotMap()
         merge(self.c,s)
         merge(self.c,v)
         self.c_flat, self.idx, self.shapes, self.tree = flatten(self.c)
@@ -34,7 +36,7 @@ class VSC():
         v_tree= unflatten(v_c, self.idx, self.shapes, self.tree)
         return DotMap(remove_nan(v_tree))
 
-    def transform(self,model):
+    def transform(self, model):
         def model_f(x):
             res = model(DotMap(self.xtoc(x)))
             if isinstance(res,tuple):
@@ -42,12 +44,36 @@ class VSC():
             return jnp.squeeze(res)
         return model_f
 
-    def generate_reports(self,model,x):
+    def minimize(self, jit=False, verbosity=1):
+
+        def model_f(x):
+            res = self.model(DotMap(self.xtoc(x)), self.r)
+            if isinstance(res,tuple):
+                res=res[0]
+            return jnp.squeeze(res)
+
+        @jax.jit
+        def hvp(x,p):
+            return jax.grad(lambda x: jnp.vdot(jax.grad(model_f)(x),p))(x)
+
+        def cb(xk, state):
+            if verbosity > 0:
+                print (state.fun)
+
+        bounds = [(-25.,25.)]*self.x.size
+
+        if jit:
+            model_f = jax.jit(model_f)
+        res = scipy_minimize(model_f, self.x, method='trust-constr', bounds=bounds,jac=jax.grad(model_f), hessp=hvp, callback=cb)
+        self.generate_reports(res.x)
+
+
+
+    def generate_reports(self,x):
         self.vdf=todf(self.xtov(x))
         c=self.xtoc(x)
-        res = model(c)
-        if isinstance(res,tuple):
-            self.rdf= todf(res[1]).fillna('')
+        self.model(c, self.r)
+        self.rdf= todf(self.r).fillna('')
         return
 
 

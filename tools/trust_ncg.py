@@ -1,7 +1,22 @@
 import jax.numpy as jnp
 import jax
 from jax.config import config
+from scipy.optimize import minimize as scipy_minimize
 config.update("jax_enable_x64", True)
+
+def minimize(func, guess):
+
+    @jax.jit
+    def hvp(x,p):
+        return jax.grad(lambda x: jnp.vdot(jax.grad(func)(x),p))(x)
+
+    bounds = [(-30.,30.)]*guess.size
+
+    res = scipy_minimize(func, guess, method='trust-constr', bounds=bounds,jac=jax.grad(func), hessp=hvp)
+    return res.x, res.fun
+
+
+
 
 @jax.jit
 def get_boundaries_intersections(z, d, trust_radius):
@@ -13,7 +28,7 @@ def get_boundaries_intersections(z, d, trust_radius):
     tb = (-b + sqrt_discriminant) / (2*a)
     return jnp.sort(jnp.stack([ta, tb]))
 
-def minimize(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-6, abs_tol=1e-10, rel_tol=1e-6,
+def minimize_custom(func, guess, trust_radius = 1., max_trust_radius=100., grad_tol=1e-6, abs_tol=1e-10, rel_tol=1e-6,
              max_iter = 100, max_cg_iter = 100, verbosity=1):
 
     grad_f = jax.grad(func)

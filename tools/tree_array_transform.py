@@ -34,7 +34,7 @@ class VSC():
     def transform(self,model):
         def model_f(x):
             res = model(DotMap(self.xtoc(x)))
-            if isinstance(res, tuple):
+            if isinstance(res,tuple):
                 res=res[0]
             return jnp.squeeze(res)
         return model_f

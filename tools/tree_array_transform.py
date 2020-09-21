@@ -5,6 +5,7 @@ import pandas as pd
 from scipy.optimize import minimize as scipy_minimize
 from jax.config import config
 config.update("jax_enable_x64", True)
+EPS = jnp.finfo(jnp.float64).resolution
 
 class VSC():
     def __init__(self,v,s, model):
@@ -48,8 +49,6 @@ class VSC():
 
         def model_f(x):
             res = self.model(DotMap(self.xtoc(x)), self.r)
-            if isinstance(res,tuple):
-                res=res[0]
             return jnp.squeeze(res)
 
         @jax.jit
@@ -64,10 +63,40 @@ class VSC():
 
         if jit:
             model_f = jax.jit(model_f)
-        res = scipy_minimize(model_f, self.x, method='trust-constr', bounds=bounds,jac=jax.grad(model_f), hessp=hvp, callback=cb)
+        res = scipy_minimize(model_f, self.x, method='trust-constr', bounds=bounds,jac=jax.grad(model_f), hessp=hvp,
+                             callback=cb, tol=1e-12)
         self.generate_reports(res.x)
 
+    def solve(self, jit=False, verbosity=1):
+        def model_f(x):
+            res = self.model(DotMap(self.xtoc(x)), self.r)
+            left = jnp.array([])
+            right= jnp.array([])
+            for i in range(len(res)):
+                left=jnp.append(left,jnp.atleast_1d(res[i][0]))
+                right=jnp.append(right,jnp.atleast_1d(res[i][1]))
+            sqerr=((left-right)/(jnp.abs(jax.lax.stop_gradient(left))+jnp.abs(jax.lax.stop_gradient(right))))**2
+            return jnp.sum(sqerr)
 
+        @jax.jit
+        def hvp(x,p):
+            return jax.grad(lambda x: jnp.vdot(jax.grad(model_f)(x),p))(x)
+
+        def cb(xk, state):
+            if verbosity > 0:
+                print (state.fun)
+
+        bounds = [(-25.,25.)]*self.x.size
+
+        if jit:
+            model_f = jax.jit(model_f)
+        # scale_factors = model_scaling(self.x)
+        res = scipy_minimize(model_f, self.x, method='trust-constr', bounds=bounds,jac=jax.grad(model_f), hessp=hvp,
+                             callback=cb, tol=1e-12)
+        if verbosity > 1:
+            print(res)
+            print(self.model(DotMap(self.xtoc(res.x)), self.r))
+        self.generate_reports(res.x)
 
     def generate_reports(self,x):
         self.vdf=todf(self.xtov(x))

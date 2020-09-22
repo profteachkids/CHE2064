@@ -4,29 +4,26 @@ from dotmap import DotMap
 import pandas as pd
 from scipy.optimize import minimize as scipy_minimize
 from jax.config import config
+from copy import deepcopy
 config.update("jax_enable_x64", True)
 EPS = jnp.finfo(jnp.float64).resolution
 
+
 class VSC():
-    def __init__(self,v,s, model):
-        self.v = v.toDict() if isinstance(v,DotMap) else v
-        self.s = s.toDict() if isinstance(s,DotMap) else s
-        self.sdf = todf(self.s)
+    def __init__(self, c, model):
+        self.model = model
+        self.c = c.toDict() if isinstance(c,DotMap) else c
+        self.c_flat, self.idx, self.shapes, self.tree = flatten(self.c)
+        self.r = DotMap()
         self.rdf = None
         self.vdf = None
-        self.model = model
-        self.c = {}
-        self.r = DotMap()
-        merge(self.c,s)
-        merge(self.c,v)
-        self.c_flat, self.idx, self.shapes, self.tree = flatten(self.c)
-
-        self.v_tree = nan_like(self.c)
-        merge(self.v_tree,v)
-        self.v_flat, *_ = flatten(self.v_tree)
-        self.update_idx = jnp.where(jnp.logical_not(jnp.isnan(self.v_flat)))
-
-        self.x = self.v_flat[self.update_idx]
+        self.sdf = None
+        self.cdf = None
+        self.v_id, nan_var = make_nan_variables(self.c)
+        self.nan_var_flat, *_ = flatten(nan_var)
+        self.update_idx = jnp.where(jnp.isnan(self.nan_var_flat))
+        self.x = self.c_flat[self.update_idx]
+        self.v_flat = jnp.nan * self.c_flat
 
     def xtoc(self,x):
         c = self.c_flat.at[self.update_idx].set(x)
@@ -103,7 +100,25 @@ class VSC():
         c=self.xtoc(x)
         self.model(c, self.r)
         self.rdf= todf(self.r).fillna('')
+        self.cdf=todf(c)
+        self.sdf=self.cdf.loc[list(set(self.cdf.index) - set(self.vdf.index))]
         return
+
+def make_nan_variables(d):
+    d = d.toDict() if isinstance(d,DotMap) else d
+    dd = deepcopy(d)
+    v_list = []
+    for (k,v), (dk, dv) in zip(dd.items(), d.items()):
+        if isinstance(v,dict):
+            make_nan_variables(v)
+        elif isinstance(v,Comp):
+            dd[k]=Comp(jnp.nan*jnp.ones_like(v.x))
+            v_list.append(id(dv))
+        elif isinstance(v,Range):
+            dd[k]=Range(jnp.nan, 0.,1.)
+            v_list.append(id(dv))
+    return v_list, dd
+
 
 
 def todf(tree):
@@ -172,6 +187,8 @@ def nan_like(x, f=None):
         val_none = map(f, values)
     return jax.tree_unflatten(treedef,val_none)
 
+
+
 def flatten(pytree):
 
     vals, tree = jax.tree_flatten(pytree)
@@ -203,6 +220,11 @@ def merge(a, b, all = True):
             merge(a[key], b_value, all)
         elif all:
             a[key] = b_value
+
+
+
+
+
 
 class Comp():
     def __init__(self,x):

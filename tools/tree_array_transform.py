@@ -16,6 +16,7 @@ class VSC():
         self.c_flat, self.idx, self.shapes, self.tree = flatten(self.c)
         self.r = DotMap()
         self.rdf = None
+        self.v = None
         self.vdf = None
         self.sdf = None
         self.cdf = None
@@ -99,6 +100,7 @@ class VSC():
             print(res)
             print(self.model(DotMap(self.xtoc(res.x)), self.r))
         self.x = res.x
+        self.v = self.xtov(self.x)
         self.generate_reports(res.x)
 
     def generate_reports(self,x):

@@ -69,10 +69,15 @@ class VSC():
             res = self.model(DotMap(self.xtoc(x)), self.r)
             left = jnp.array([])
             right= jnp.array([])
-            for i in range(len(res)):
-                left=jnp.append(left,jnp.atleast_1d(res[i][0]))
-                right=jnp.append(right,jnp.atleast_1d(res[i][1]))
+            if type(res[0]) in (tuple, list):
+                for i in range(len(res)):
+                    left=jnp.append(left,jnp.atleast_1d(res[i][0]))
+                    right=jnp.append(right,jnp.atleast_1d(res[i][1]))
+            else:
+                left=jnp.append(left,jnp.atleast_1d(res[0]))
+                right=jnp.append(right,jnp.atleast_1d(res[1]))
             sqerr=((left-right)/(jnp.abs(jax.lax.stop_gradient(left))+jnp.abs(jax.lax.stop_gradient(right))))**2
+
             return jnp.sum(sqerr)
 
         @jax.jit

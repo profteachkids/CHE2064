@@ -98,6 +98,7 @@ class VSC():
         if verbosity > 1:
             print(res)
             print(self.model(DotMap(self.xtoc(res.x)), self.r))
+        self.x = res.x
         self.generate_reports(res.x)
 
     def generate_reports(self,x):

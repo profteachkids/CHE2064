@@ -5,6 +5,7 @@ import pandas as pd
 from scipy.optimize import minimize as scipy_minimize
 from jax.config import config
 from copy import deepcopy
+from functools import partial
 config.update("jax_enable_x64", True)
 EPS = jnp.finfo(jnp.float64).resolution
 
@@ -49,7 +50,6 @@ class VSC():
             res = self.model(DotMap(self.xtoc(x)), self.r)
             return jnp.squeeze(res)
 
-        @jax.jit
         def hvp(x,p):
             return jax.grad(lambda x: jnp.vdot(jax.grad(model_f)(x),p))(x)
 
@@ -81,7 +81,6 @@ class VSC():
 
             return jnp.sum(sqerr)
 
-        @jax.jit
         def hvp(x,p):
             return jax.grad(lambda x: jnp.vdot(jax.grad(model_f)(x),p))(x)
 

@@ -1,4 +1,4 @@
-from tools.tree_array_transform import flatten, unflatten, VSC, VSC2, Range, Comp, nan_like, replace_not_nan
+from tools.tree_array_transform import flatten, unflatten, VSC, Range, Comp, nan_like, replace_not_nan
 from dotmap import DotMap
 import numpy as np
 import jax.numpy as jnp
@@ -18,6 +18,6 @@ c.Lx = Comp([1/4,1/2,1/4]) # Comp - constrains mole fractions to behave like mol
 c.flashT = Range(360, 273.15, c.FT)  # Guess and bounds for flash temperature
 c.Vtot = Range(c.Ftot/1.5, 0., c.Ftot)  # Guess half of feed in vapor
 
-vsc = VSC2(c,model)
+vsc = VSC(c,model)
 print(vsc.xtoc(vsc.x))
 print(vsc.xtov(vsc.x))

@@ -36,11 +36,14 @@ extract_single_props = {'Molecular Weight' : 'Mw',
                         'Heat of vaporization' : 'HvapNB'}
 
 extract_coeff_props={'Vapor Pressure' : 'Pvap',
-                     'Ideal Gas Heat Capacity' : 'CpIG',
+                     'Ideal Gas Heat Capacity':'CpIG',
                      'Liquid Heat Capacity' : 'CpL',
                      'Solid Heat Capacity' : 'CpS',
                      'Heat of Vaporization' : 'Hvap',
                      'Liquid Density' : 'rhoL'}
+
+extract_poly_coeff_props={'Polynomial Ideal Gas Heat Capacity (cal/mol-K)':'polyCpIG'}
+
 base_url = 'https://raw.githubusercontent.com/profteachkids/CHE2064/master/data/'
 
 BIP_file = 'https://raw.githubusercontent.com/profteachkids/CHE2064/master/data/BinaryNRTL.txt'
@@ -54,9 +57,10 @@ class Props():
 
         id_pat = re.compile(r'ID\s+(\d+)')
         formula_pat = re.compile(r'Formula:\s+([A-Z0-9]+)')
-        single_props_pat = re.compile(r'^\s+([\w \/.]+?)\s+:\s+([-.0-9e+]+)\s+[\w\s/]*$', re.MULTILINE)
+        single_props_pat = re.compile(r'^\s+([\w \/.]+?)\s+:\s+([-.0-9e+]+) +([-\w/.()*]*) *$', re.MULTILINE)
         coeffs_name_pat = re.compile(r"([\w ]+)\s[^\n]*?Equation.*?Coeffs:([- e\d.+]+)+?", re.DOTALL)
         coeffs_pat = re.compile(r'([-\de.+]+)')
+        poly_coeffs_pat = re.compile(r"([- \/'()A-Za-z]*)\n Coefficients: +([-+e\d.+]*)\n* *([-+e\d.+]*)\n* *([-+e\d.+]*)\n* *([-+e\d.+]*)\n* *([-+e\d.+]*)\n* *([-+e\d.+]*)\n* *([-+e\d.+]*)")
 
         props_deque=deque()
         for comp in comps:
@@ -65,17 +69,32 @@ class Props():
                 raise ValueError(f'{comp} - no available data')
             text=res.text
             props={'Name': comp}
+            units={}
             props['ID']=id_pat.search(text).groups(1)[0]
             props['Formula']=formula_pat.search(text).groups(1)[0]
-            single_props = dict(single_props_pat.findall(text))
+            single_props = dict((item[0], item[1:]) for item in single_props_pat.findall(text))
             for k,v in extract_single_props.items():
-                props[v]=float(single_props.pop(k))
+                props[v]=float(single_props[k][0])
+                print(props[v],end=', ')
+                units[v]=single_props[k][1]
+                props[v] = props[v]*2.20462*1055.6 if units[v]=='Btu/lbmol' else props[v]
+                props[v] = props[v]*6894.76 if units[v]=='psia' else props[v]
+                props[v] = props[v]*5/9 - 32 + 273.15 if units[v] =='F' else props[v]
+                print(units[v],props[v])
 
             coeffs_name_strings = dict(coeffs_name_pat.findall(text))
             for k,v in extract_coeff_props.items():
                 coeffs = coeffs_pat.findall(coeffs_name_strings[k])
                 for letter, value in zip(string.ascii_uppercase,coeffs):
                     props[v+letter]=float(value)
+            poly_props = dict([(item[0], item[1:]) for item in poly_coeffs_pat.findall(text)])
+            for k,v in extract_poly_coeff_props.items():
+                for letter, value in zip(string.ascii_uppercase,poly_props[k]):
+                    if value == '':
+                        break
+                    props[v+letter]=float(value)
+
+
             props_deque.append(props)
 
         for prop in props_deque[0].keys():
@@ -84,6 +103,13 @@ class Props():
             else:
                 values = props_deque[0][prop]
             setattr(self,prop,values)
+
+
+        # kmol to mol
+        self.Vc = self.Vc/1000.
+        self.HfIG = self.HfIG/1000.
+        self.HfL = self.HfIG - self.Hvap(298.15)
+        self.GfIG = self.GfIG/1000.
 
         if (self.N_comps > 1) and get_NRTL:
             text = requests.get(BIP_file).text
@@ -139,25 +165,42 @@ class Props():
                 self.CpIGD*(self.CpIGE/T/jnp.cosh(self.CpIGE/T))**2)
 
     @partial(jax.jit, static_argnums=(0,))
+    def deltaHsensIGpoly(self, T):
+        T=jnp.squeeze(T)
+        return T * (self.polyCpIGA + T * (self.polyCpIGB / 2 + T * (self.polyCpIGC / 3 + T * (self.polyCpIGD / 4 + T* (self.polyCpIGE / 5 + T*self.polyCpIGF/6)))))*4.184
+
+    @partial(jax.jit, static_argnums=(0,))
+    def deltaHsensIG(self, T):
+        T=jnp.squeeze(T)
+        return (self.CpIGA*T + self.CpIGB * self.CpIGC/jnp.tanh(self.CpIGC/T) - self.CpIGD * self.CpIGE * jnp.tanh(self.CpIGE/T))/1000
+
+    @partial(jax.jit, static_argnums=(0,))
+    def HIG(self, nV, T):
+        T=jnp.squeeze(T)
+        return jnp.dot(nV, self.HfIG + self.deltaHsensIG(T) - self.deltaHsensIG(298.15))
+
+
+    @partial(jax.jit, static_argnums=(0,))
     def Hvap(self, T):
         T=jnp.squeeze(T)
         Tr = T/self.Tc
-        return (self.HvapA*jnp.power(1-Tr, self.HvapB + (self.HvapC+(self.HvapD+self.HvapE*Tr)*Tr)*Tr ))
-    
+        return (self.HvapA*jnp.power(1-Tr, self.HvapB + (self.HvapC+(self.HvapD+self.HvapE*Tr)*Tr)*Tr ))/1000.
+
+
     @partial(jax.jit, static_argnums=(0,))
     def deltaHsensL(self, T):
         T=jnp.squeeze(T)
-        return T * (self.CpLA + T * (self.CpLB / 2 + T * (self.CpLC / 3 + T * (self.CpLD / 4 + self.CpLE / 5 * T))))
+        return T * (self.CpLA + T * (self.CpLB / 2 + T * (self.CpLC / 3 + T * (self.CpLD / 4 + self.CpLE / 5 * T))))/1000.
 
     @partial(jax.jit, static_argnums=(0,))
     def Hv(self, nV, T):
         T=jnp.squeeze(T)
-        return jnp.dot(nV, self.deltaHsensL(T)+self.Hvap(T))
+        return jnp.dot(nV, self.Hl(nV, T) + self.Hvap(T))
 
     @partial(jax.jit, static_argnums=(0,))
     def Hl(self, nL, T):
         T=jnp.squeeze(T)
-        return jnp.dot(nL, self.deltaHsensL(T))
+        return jnp.dot(nL, self.HfL + self.deltaHsensL(T) - self.deltaHsensL(298.15))
 
     @partial(jax.jit, static_argnums=(0,))
     def rhol(self, T):

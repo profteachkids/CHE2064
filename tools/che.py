@@ -79,7 +79,7 @@ class Props():
                 units[v]=single_props[k][1]
                 props[v] = props[v]*2.20462*1055.6 if units[v]=='Btu/lbmol' else props[v]
                 props[v] = props[v]*6894.76 if units[v]=='psia' else props[v]
-                props[v] = props[v]*5/9 - 32 + 273.15 if units[v] =='F' else props[v]
+                props[v] = (props[v]-32)*5/9 + 273.15 if units[v] =='F' else props[v]
                 print(units[v],props[v])
 
             coeffs_name_strings = dict(coeffs_name_pat.findall(text))

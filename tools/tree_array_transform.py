@@ -95,6 +95,9 @@ class VSC():
         # scale_factors = model_scaling(self.x)
         res = scipy_minimize(model_f, self.x, method='trust-constr', bounds=bounds,jac=jax.grad(model_f), hessp=hvp,
                              callback=cb, tol=1e-12)
+        # res = scipy_minimize(model_f, self.x, method='SLSQP', bounds=bounds,jac=jax.grad(model_f),
+        #                      tol=1e-12)
+
         if verbosity > 1:
             print(res)
             print(self.model(DotMap(self.xtoc(res.x)), self.r))

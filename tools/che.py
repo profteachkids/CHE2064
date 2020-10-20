@@ -75,12 +75,10 @@ class Props():
             single_props = dict((item[0], item[1:]) for item in single_props_pat.findall(text))
             for k,v in extract_single_props.items():
                 props[v]=float(single_props[k][0])
-                print(props[v],end=', ')
                 units[v]=single_props[k][1]
                 props[v] = props[v]*2.20462*1055.6 if units[v]=='Btu/lbmol' else props[v]
                 props[v] = props[v]*6894.76 if units[v]=='psia' else props[v]
                 props[v] = (props[v]-32)*5/9 + 273.15 if units[v] =='F' else props[v]
-                print(units[v],props[v])
 
             coeffs_name_strings = dict(coeffs_name_pat.findall(text))
             for k,v in extract_coeff_props.items():
@@ -195,7 +193,7 @@ class Props():
     @partial(jax.jit, static_argnums=(0,))
     def Hv(self, nV, T):
         T=jnp.squeeze(T)
-        return jnp.dot(nV, self.Hl(nV, T) + self.Hvap(T))
+        return self.Hl(nV, T) + jnp.dot(nV, self.Hvap(T))
 
     @partial(jax.jit, static_argnums=(0,))
     def Hl(self, nL, T):

@@ -44,7 +44,7 @@ class VSC():
             return jnp.squeeze(res)
         return model_f
 
-    def solve(self, jit=False, verbosity=1):
+    def solve(self, jit=True, verbosity=1):
         def constraints(x):
             res = self.model(DotMap(self.xtoc(x)))
             eq = jnp.array([])

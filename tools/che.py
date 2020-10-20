@@ -168,6 +168,12 @@ class Props():
         return T * (self.polyCpIGA + T * (self.polyCpIGB / 2 + T * (self.polyCpIGC / 3 + T * (self.polyCpIGD / 4 + T* (self.polyCpIGE / 5 + T*self.polyCpIGF/6)))))*4.184
 
     @partial(jax.jit, static_argnums=(0,))
+    def HIGpoly(self, nV, T):
+        T=jnp.squeeze(T)
+        return jnp.dot(nV, self.HfIG + self.deltaHsensIGpoly(T) - self.deltaHsensIGpoly(298.15))
+
+
+    @partial(jax.jit, static_argnums=(0,))
     def deltaHsensIG(self, T):
         T=jnp.squeeze(T)
         return (self.CpIGA*T + self.CpIGB * self.CpIGC/jnp.tanh(self.CpIGC/T) - self.CpIGD * self.CpIGE * jnp.tanh(self.CpIGE/T))/1000

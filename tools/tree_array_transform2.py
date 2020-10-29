@@ -48,13 +48,19 @@ class VSC():
         def constraints(x):
             res = self.model(DotMap(self.xtoc(x)))
             eq = jnp.array([])
-            if type(res[0]) in (tuple, list):
-                for i in range(len(res[0])):
-                    eq=jnp.append(eq,jnp.atleast_1d(res[0][i]))
+            if type(res) is tuple:
+                if type(res[0]) is list:
+                    for i in range(len(res[0])):
+                        eq=jnp.append(eq,jnp.atleast_1d(res[0][i]))
+                else:
+                    eq=jnp.append(eq,jnp.atleast_1d(res[0]))
             else:
-                eq=jnp.append(eq,jnp.atleast_1d(res[0]))
+                if type(res) is list:
+                    for i in range(len(res)):
+                        eq=jnp.append(eq,jnp.atleast_1d(res[i]))
+                else:
+                    eq=jnp.append(eq,jnp.atleast_1d(res))
             return eq
-
         if jit:
             constraints = jax.jit(constraints)
 
@@ -80,7 +86,7 @@ class VSC():
         self.vdf=todf(self.xtov(x))
         c=self.xtoc(x)
         res = self.model(c)
-        if res is tuple:
+        if type(res) is tuple:
             self.r = res[1]
             self.rdf= todf(self.r).fillna('')
         self.cdf=todf(c)
@@ -112,7 +118,7 @@ def todf(tree):
     tuple_keys(tree, res)
     return pd.DataFrame.from_dict(res).transpose().fillna('')
 
-__sizes=[[(f'vector{i}', f'{j}') for j in range(1,i+1)] for i in range(1,10)]
+__sizes=[[(f'vector{i}', f'{j}') for j in range(1,i+1)] for i in range(1,100)]
 # __sizes[0]=('','Value')
 def tuple_keys(orig, flat={}, path=(), sizes=__sizes):
 

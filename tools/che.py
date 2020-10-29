@@ -150,6 +150,8 @@ class Props():
                     np.add.at(self.NRTL_alpha, comb_index, alpha)
                     np.add.at(self.NRTL_alpha, (comb_index[1],comb_index[0]), alpha)
 
+        self.PvapVec = jax.vmap(self.Pvap,0)
+
     @partial(jax.jit, static_argnums=(0,))
     def Pvap(self,T):
         T=jnp.squeeze(T)

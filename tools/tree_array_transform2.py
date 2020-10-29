@@ -26,6 +26,7 @@ class VSC():
         self.update_idx = jnp.where(jnp.isnan(self.nan_var_flat))
         self.x = self.c_flat[self.update_idx]
         self.v_flat = jnp.nan * self.c_flat
+        self.test=self.model(self.xtoc(self.x))
 
     def xtoc(self,x):
         c = self.c_flat.at[self.update_idx].set(x)

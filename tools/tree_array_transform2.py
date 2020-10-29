@@ -79,8 +79,10 @@ class VSC():
     def generate_reports(self,x):
         self.vdf=todf(self.xtov(x))
         c=self.xtoc(x)
-        _, self.r = self.model(c)
-        self.rdf= todf(self.r).fillna('')
+        res = self.model(c)
+        if res is tuple:
+            self.r = res[1]
+            self.rdf= todf(self.r).fillna('')
         self.cdf=todf(c)
         self.sdf=self.cdf.loc[list(set(self.cdf.index) - set(self.vdf.index))]
         return
@@ -97,6 +99,9 @@ def make_nan_variables(d):
             v_list.append(id(dv))
         elif isinstance(v,Range):
             dd[k]=Range(jnp.nan, 0.,1.)
+            v_list.append(id(dv))
+        elif isinstance(v,RangeArray):
+            dd[k]=RangeArray(jnp.nan * jnp.ones_like(v.x), 0.,1.)
             v_list.append(id(dv))
     return v_list, dd
 
@@ -221,6 +226,30 @@ class Comp():
 
 
 jax.tree_util.register_pytree_node(Comp, Comp.flatten, Comp.unflatten)
+
+class RangeArray():
+    def __init__(self,x, lo, hi):
+        self.x=x
+        self.lo = lo
+        self.diff = hi-lo
+        if jnp.any(self.diff <= 0.) or jnp.any(self.x<lo) or jnp.any(self.x>hi):
+            raise ValueError('Hi > x > Lo is required')
+
+    def __repr__(self):
+        return f'{self.x}, lo={self.lo}, diff={self.diff}'
+
+    @staticmethod
+    def flatten(v):
+        p = (v.x-v.lo)/v.diff
+        return (jnp.log(p)-jnp.log(1.-p),), (v.lo,v.diff)
+
+    @staticmethod
+    def unflatten(aux, f):
+        f=jnp.squeeze(jnp.asarray(f))
+        return jax.nn.sigmoid(f)*aux[1]+aux[0]
+
+jax.tree_util.register_pytree_node(RangeArray, RangeArray.flatten, RangeArray.unflatten)
+
 
 class Range():
     def __init__(self,x, lo, hi):

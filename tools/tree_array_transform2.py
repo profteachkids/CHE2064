@@ -189,7 +189,8 @@ def flatten(pytree):
     return v_flat, idx, shapes, tree
 
 def unflatten(x, idx, shapes, tree):
-    return jax.tree_unflatten(tree, [item.reshape(shape) for item,shape in zip(jnp.split(x,idx[:-1]), shapes)])
+    return jax.tree_unflatten(tree, [(lambda item, shape: jnp.squeeze(item) if shape==(1,) else item.reshape(shape))(item,shape)
+                                     for item,shape in zip(jnp.split(x,idx[:-1]), shapes)])
 
 def replace_not_nan(a,b):
     a = a.toDict() if isinstance(a,DotMap) else a

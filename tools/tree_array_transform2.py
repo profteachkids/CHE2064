@@ -21,12 +21,12 @@ class VSC():
         self.vdf = None
         self.sdf = None
         self.cdf = None
-        self.v_id, nan_var = make_nan_variables(self.c)
-        self.nan_var_flat, *_ = flatten(nan_var)
+        self.v_id, self.nan_var = make_nan_variables(self.c)
+        self.nan_var_flat, *_ = flatten(self.nan_var)
         self.update_idx = jnp.where(jnp.isnan(self.nan_var_flat))
         self.x = self.c_flat[self.update_idx]
         self.v_flat = jnp.nan * self.c_flat
-        self.test=self.model(self.xtoc(self.x))
+        # self.test=self.model(self.xtoc(self.x))
 
     def xtoc(self,x):
         c = self.c_flat.at[self.update_idx].set(x)
@@ -189,7 +189,7 @@ def flatten(pytree):
     return v_flat, idx, shapes, tree
 
 def unflatten(x, idx, shapes, tree):
-    return jax.tree_unflatten(tree, [item.reshape(shape).squeeze() for item,shape in zip(jnp.split(x,idx[:-1]), shapes)])
+    return jax.tree_unflatten(tree, [item.reshape(shape) for item,shape in zip(jnp.split(x,idx[:-1]), shapes)])
 
 def replace_not_nan(a,b):
     a = a.toDict() if isinstance(a,DotMap) else a

@@ -5,7 +5,7 @@ import pandas as pd
 from scipy.optimize import minimize, NonlinearConstraint
 from jax.config import config
 from copy import deepcopy
-from functools import partial
+from scipy.sparse import coo_matrix
 config.update("jax_enable_x64", True)
 EPS = jnp.finfo(jnp.float64).resolution
 
@@ -45,7 +45,7 @@ class VSC():
             return jnp.squeeze(res)
         return model_f
 
-    def solve(self, jit=True, verbosity=1):
+    def solve(self, jit=True, verbosity=1, sparse=False):
         def constraints(x):
             res = self.model(DotMap(self.xtoc(x)))
             eq = jnp.array([])
@@ -62,10 +62,25 @@ class VSC():
                 else:
                     eq=jnp.append(eq,jnp.atleast_1d(res))
             return eq
+
         if jit:
             constraints = jax.jit(constraints)
 
-        nlc = NonlinearConstraint(constraints, 0.,0., jac=jax.jacobian(constraints))
+        jac = jax.jacobian(constraints)
+        if jit:
+            jac= jax.jit(jac)
+
+        def sparse_jac(x):
+            jac_x = jac(x)
+            idx = jnp.where(jac_x>1e-11)
+            return coo_matrix((jac_x[idx], idx))
+
+
+        if sparse:
+            nlc = NonlinearConstraint(constraints, 0.,0., jac=sparse_jac)
+        else:
+            nlc = NonlinearConstraint(constraints, 0.,0., jac=jac)
+
 
         def cb(xk):
             if verbosity > 0:

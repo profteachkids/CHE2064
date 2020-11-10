@@ -245,7 +245,7 @@ class Comp():
     def unflatten(aux, q):
         q=jnp.squeeze(jnp.asarray(q)) #q may be a tuple that can't be squeezed
         xm1 = jnp.exp(q)/(1+jnp.sum(jnp.exp(q)))
-        return jnp.concatenate((xm1, jnp.atleast_1d(1.-jnp.sum(xm1))))
+        return jnp.concatenate((jnp.atleast_1d(xm1), jnp.atleast_1d(1.-jnp.sum(xm1))))
 
 
 jax.tree_util.register_pytree_node(Comp, Comp.flatten, Comp.unflatten)

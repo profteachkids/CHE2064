@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/Users/carlosco/opt/anaconda3/envs/jax_latest/bin/python",
+    "python.pythonPath": "D:\\Miniconda3\\envs\\py38\\python.exe",
     "python.formatting.provider": "black",
     "python.terminal.activateEnvInCurrentTerminal": true,
     "code-runner.executorMap": {

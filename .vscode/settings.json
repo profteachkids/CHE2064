@@ -1,8 +1,9 @@
 {
-    "python.pythonPath": "D:\\Miniconda3\\envs\\py38\\python.exe",
+    "python.pythonPath": "D:\\Anaconda\\envs\\py38\\python.exe",
     "python.formatting.provider": "black",
     "python.terminal.activateEnvInCurrentTerminal": true,
     "code-runner.executorMap": {
+
 
         "javascript": "node",
         "java": "cd $dir && javac $fileName && java $fileNameWithoutExt",
@@ -10,7 +11,7 @@
         "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
         "objective-c": "cd $dir && gcc -framework Cocoa $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
         "php": "php",
-        "python": "/Users/carlosco/opt/anaconda3/envs/jax_latest/bin/python -u",
+        "python": "D:\\Anaconda\\envs\\py38\\python -u",
         "perl": "perl",
         "perl6": "perl6",
         "ruby": "ruby",
